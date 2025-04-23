@@ -49,3 +49,7 @@ springdoc:
   api-docs:
     path: /v1/api-docs
 
+jwt:
+  secret: 75hjbbd8hnbjbjbjbxhh7seh6g36g6wgrgsldububxlnp0f0djf9jdpj
+
+

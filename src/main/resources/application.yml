@@ -1,0 +1,44 @@
+
+
+spring:
+
+  profiles:
+    
+    active: local
+
+  application:
+    name: auth-server
+
+  config:
+    import: optional:configserver:http://192.168.100.23:7777
+    #import: ${SPRING_CONFIG_IMPORT}
+
+  datasource:
+    username: ${db.username}
+    hikari:
+        maximum-pool-size: 5 
+        connection-timeout: 20000 
+    url: ${db.url}
+    password: ${db.password}
+
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format-sql: true
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    open-in-view: true
+
+server:
+  port: 3000
+  servlet:
+    context-path: /auth-server
+
+eureka:
+  instance:
+    instance-id: "${spring.application.name}:${random.value}"
+  client:
+    service-url:
+      defaultZone: ${eureka.registry-server}

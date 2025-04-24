@@ -6,8 +6,14 @@ import java.util.function.Function;
 
 import javax.crypto.SecretKey;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.MessageSource;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
+import org.springframework.web.server.ResponseStatusException;
+
+import com.tesoramobil.auth.services.MessageService;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -17,6 +23,9 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 @Slf4j
 public class JwtHelper {
+	
+    @Autowired
+    private MessageService messageService;
 	
 	@Value("${jwt.secret}")
 	private String jwtSecret;
@@ -46,10 +55,17 @@ public class JwtHelper {
 	 * @param token Token JWT a validar.
 	 * @return true si el token aún no ha expirado, false si ya no es válido.
 	 */
-	public boolean validateToken(String token) {
-	    final var expirationDate = this.getExpirationDate(token);
-	    return expirationDate.after(new Date());
-	}
+    public boolean validateToken(String token) {
+        try {
+            final var expirationDate = this.getExpirationDate(token);
+            return expirationDate.after(new Date());
+        } catch (Exception e) {
+            throw new ResponseStatusException(
+                HttpStatus.UNAUTHORIZED,
+                messageService.get("token.exception.message")
+            );
+        }
+    }
 
 
 	/**

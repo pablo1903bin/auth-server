@@ -1,6 +1,7 @@
 package com.tesoramobil.auth.services;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -30,7 +31,8 @@ public class AuthServiceImpl implements AuthService {
     @Autowired
     private JwtHelper jwtHelper;
 
-    private static final String USER_EXCEPTION_MESSAGE = "ERROR DE AUTHENTICACION DE USUARIO";
+    @Autowired
+    private MessageService messageService;
 
     /**
      * Inicia sesión utilizando un objeto UserEntity.
@@ -41,7 +43,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public TokenDto login(UserLoginDto user) {
     	final var userFromDB = userRepository.findByUsername(user.getUsername())
-    	     .orElseThrow(()->new ResponseStatusException(HttpStatus.UNAUTHORIZED, USER_EXCEPTION_MESSAGE));
+    	     .orElseThrow(()->new ResponseStatusException(HttpStatus.UNAUTHORIZED, messageService.get("user.exception.message")));
     	
     	this.validPassword(user, userFromDB);
 
@@ -67,7 +69,7 @@ public class AuthServiceImpl implements AuthService {
         }
 
         // Si no es válido, lanza error 401
-        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, USER_EXCEPTION_MESSAGE);
+        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, messageService.get("user.exception.message"));
     }
 
 
@@ -80,7 +82,7 @@ public class AuthServiceImpl implements AuthService {
      */
     private void validPassword(UserLoginDto userDto, UserEntity userEntity) {
         if (!this.passwordEncoder.matches(userDto.getPassword(), userEntity.getPassword())) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, USER_EXCEPTION_MESSAGE);
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, messageService.get("user.exception.message"));
         }
     }
 }

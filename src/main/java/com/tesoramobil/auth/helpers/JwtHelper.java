@@ -6,8 +6,14 @@ import java.util.function.Function;
 
 import javax.crypto.SecretKey;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.MessageSource;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
+import org.springframework.web.server.ResponseStatusException;
+
+import com.tesoramobil.auth.services.MessageService;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -17,10 +23,13 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 @Slf4j
 public class JwtHelper {
-	
+
+	@Autowired
+	private MessageService messageService;
+
 	@Value("${jwt.secret}")
 	private String jwtSecret;
-	
+
 	/**
 	 * Genera un token JWT firmado con la clave secreta y con fecha de expiración.
 	 *
@@ -28,35 +37,33 @@ public class JwtHelper {
 	 * @return Token JWT en formato String.
 	 */
 	public String createToken(String username) {
-		
-	    final var now = new Date();
-	    final var expirationDate = new Date(now.getTime() + (3600 * 1000)); // 1 hora
 
-	    return Jwts
-	            .builder()
-	            .setSubject(username) // El valor que se usará como "identidad" del usuario
-	            .setIssuedAt(new Date(System.currentTimeMillis())) // Fecha de emisión
-	            .setExpiration(expirationDate) // Fecha de expiración
-	            .signWith(this.getSecretKey()) // Firma el token
-	            .compact(); // Genera el token final
+		final var now = new Date();
+		final var expirationDate = new Date(now.getTime() + (3600 * 1000)); // 1 hora
+
+		return Jwts
+				.builder()
+				.setSubject(username) // El valor que se usará como "identidad" del usuario
+				.setIssuedAt(new Date(System.currentTimeMillis())) // Fecha de emisión
+				.setExpiration(expirationDate) // Fecha de expiración
+				.signWith(this.getSecretKey()) // Firma el token
+				.compact(); // Genera el token final
 	}
-	
-	
+
 	// Modificamos JwtHelper para agregar los roles en el JWT
 	public String createTokenWithClaims(String username, String role) {
-	    final var now = new Date();
-	    final var expirationDate = new Date(now.getTime() + (3600 * 1000)); // 1 hora
+		final var now = new Date();
+		final var expirationDate = new Date(now.getTime() + (3600 * 1000)); // 1 hora
 
-	    return Jwts.builder()
-	        .setSubject(username)
-	        .claim("roles", role) // Aquí insertamos el rol como claim
-	        .setIssuedAt(now)
-	        .setExpiration(expirationDate)
-	        .signWith(this.getSecretKey())
-	        .compact();
+		return Jwts.builder()
+				.setSubject(username)
+				.claim("roles", role) // Aquí insertamos el rol como claim
+				.setIssuedAt(now)
+				.setExpiration(expirationDate)
+				.signWith(this.getSecretKey())
+				.compact();
 	}
-	
-	
+
 	/**
 	 * Verifica si un token JWT es válido, es decir, si no ha expirado.
 	 *
@@ -64,14 +71,15 @@ public class JwtHelper {
 	 * @return true si el token aún no ha expirado, false si ya no es válido.
 	 */
 	public boolean validateToken(String token) {
-	    try {
-	        final var expirationDate = this.getExpirationDate(token);
-	        return expirationDate.after(new Date());
-	    } catch (Exception e) {
-	        return false;
-	    }
+		try {
+			final var expirationDate = this.getExpirationDate(token);
+			return expirationDate.after(new Date());
+		} catch (Exception e) {
+			throw new ResponseStatusException(
+					HttpStatus.UNAUTHORIZED,
+					messageService.get("token.exception.message"));
+		}
 	}
-
 
 	/**
 	 * Verifica si un token ya ha expirado.
@@ -80,11 +88,10 @@ public class JwtHelper {
 	 * @return true si el token ya expiró, false en caso contrario.
 	 */
 	public boolean isTokenExpired(String token) {
-	    final Date expiration = this.getExpirationDate(token);
-	    return expiration.before(new Date());
+		final Date expiration = this.getExpirationDate(token);
+		return expiration.before(new Date());
 	}
 
-	
 	/**
 	 * Obtiene la fecha de expiración de un token JWT.
 	 *
@@ -92,11 +99,12 @@ public class JwtHelper {
 	 * @return Fecha de expiración (Date) contenida en el token.
 	 */
 	private Date getExpirationDate(String token) {
-	    return this.getClaimsFromToken(token, Claims::getExpiration);
+		return this.getClaimsFromToken(token, Claims::getExpiration);
 	}
 
 	/**
-	 * Extrae un dato específico (claim) desde un token JWT utilizando una función resolutora.
+	 * Extrae un dato específico (claim) desde un token JWT utilizando una función
+	 * resolutora.
 	 *
 	 * @param token    El token JWT firmado.
 	 * @param resolver Una función que extrae el valor deseado del objeto Claims.
@@ -104,10 +112,9 @@ public class JwtHelper {
 	 * @return El dato extraído del token JWT.
 	 */
 	private <T> T getClaimsFromToken(String token, Function<Claims, T> resolver) {
-	    return resolver.apply(this.signToken(token));
+		return resolver.apply(this.signToken(token));
 	}
 
-	
 	/**
 	 * Firma un token JWT con la clave secreta y retorna los claims incluidos.
 	 *
@@ -115,11 +122,11 @@ public class JwtHelper {
 	 * @return Claims extraídos del token.
 	 */
 	private Claims signToken(String token) {
-	    return Jwts.parserBuilder()
-	            .setSigningKey(getSecretKey())
-	            .build()
-	            .parseClaimsJws(token)
-	            .getBody();
+		return Jwts.parserBuilder()
+				.setSigningKey(getSecretKey())
+				.build()
+				.parseClaimsJws(token)
+				.getBody();
 	}
 
 	/**
@@ -128,7 +135,7 @@ public class JwtHelper {
 	 * @return SecretKey usada para la firma HMAC.
 	 */
 	private SecretKey getSecretKey() {
-	    return Keys.hmacShaKeyFor(this.jwtSecret.getBytes(StandardCharsets.UTF_8));
+		return Keys.hmacShaKeyFor(this.jwtSecret.getBytes(StandardCharsets.UTF_8));
 	}
 
 }

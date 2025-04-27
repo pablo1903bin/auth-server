@@ -11,6 +11,7 @@ import com.tesoramobil.auth.entities.UserEntity;
 import com.tesoramobil.auth.helpers.JwtHelper;
 import com.tesoramobil.auth.models.TokenDto;
 import com.tesoramobil.auth.models.UserLoginDto;
+import com.tesoramobil.auth.models.UserLoginResponseDto;
 import com.tesoramobil.auth.repositories.UserRepository;
 
 /**
@@ -40,8 +41,8 @@ public class AuthServiceImpl implements AuthService {
      */
     @Override
     public TokenDto login(UserLoginDto user) {
-    	final var userFromDB = userRepository.findByUsername(user.getUsername())
-    	     .orElseThrow(()->new ResponseStatusException(HttpStatus.UNAUTHORIZED, USER_EXCEPTION_MESSAGE));
+    	
+    	final var userFromDB = userRepository.findByUsername(user.getUsername()).orElseThrow(()->new ResponseStatusException(HttpStatus.UNAUTHORIZED, USER_EXCEPTION_MESSAGE));
     	
     	this.validPassword(user, userFromDB);
 
@@ -58,16 +59,41 @@ public class AuthServiceImpl implements AuthService {
      */
     @Override
     public TokenDto validateToken(TokenDto token) {
-        // Verifica si el token es válido (no expirado)
-        if (this.jwtHelper.validateToken(token.getAccessToken())) {
-            // Si es válido, devuelve el mismo token como confirmación
-            return TokenDto.builder()
-                .accessToken(token.getAccessToken())
-                .build();
+        try {
+            if (this.jwtHelper.validateToken(token.getAccessToken())) {
+                return TokenDto.builder()
+                    .accessToken(token.getAccessToken())
+                    .build();
+            } else {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, USER_EXCEPTION_MESSAGE);
+            }
+        } catch (Exception e) {
+            // Si cualquier excepción ocurre al validar el token, responde 401
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, USER_EXCEPTION_MESSAGE);
         }
+    }
 
-        // Si no es válido, lanza error 401
-        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, USER_EXCEPTION_MESSAGE);
+
+ // Modificamos AuthServiceImpl.login para retornar el nuevo DTO y usar el nuevo método
+    @Override
+    public UserLoginResponseDto loginClaims(UserLoginDto user) {
+        final var userFromDB = userRepository.findByUsername(user.getUsername())
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, USER_EXCEPTION_MESSAGE));
+        
+        System.out.println("[auth -server AuthServiceImpl]  📦  usuario de la DB:  " + userFromDB.toString());
+        
+        this.validPassword(user, userFromDB);
+
+        String token = jwtHelper.createTokenWithClaims(userFromDB.getUsername(), userFromDB.getRole().name());
+
+        return UserLoginResponseDto.builder()
+        	    .idUser(userFromDB.getId())         
+        	    .username(userFromDB.getUsername())
+        	    .email(userFromDB.getEmail())        
+        	    .role(userFromDB.getRole())
+        	    .tkn(token)
+        	    .build();
+
     }
 
 

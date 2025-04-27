@@ -2,6 +2,7 @@ package com.tesoramobil.auth.controllers;
 
 import com.tesoramobil.auth.models.TokenDto;
 import com.tesoramobil.auth.models.UserLoginDto;
+import com.tesoramobil.auth.models.UserLoginResponseDto;
 import com.tesoramobil.auth.services.AuthService;
 
 import lombok.AllArgsConstructor;
@@ -22,8 +23,8 @@ public class AuthController {
      * @return TokenDto con el accessToken generado.
      */
     @PostMapping(path = "/login")
-    public ResponseEntity<TokenDto> jwtCreate(@RequestBody UserLoginDto user) {
-        return ResponseEntity.ok(this.authService.login(user));
+    public ResponseEntity<UserLoginResponseDto> jwtCreate(@RequestBody UserLoginDto user) {
+        return ResponseEntity.ok(this.authService.loginClaims(user));
     }
 
     /**

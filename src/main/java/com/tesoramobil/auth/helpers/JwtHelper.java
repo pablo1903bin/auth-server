@@ -28,6 +28,7 @@ public class JwtHelper {
 	 * @return Token JWT en formato String.
 	 */
 	public String createToken(String username) {
+		
 	    final var now = new Date();
 	    final var expirationDate = new Date(now.getTime() + (3600 * 1000)); // 1 hora
 
@@ -39,7 +40,23 @@ public class JwtHelper {
 	            .signWith(this.getSecretKey()) // Firma el token
 	            .compact(); // Genera el token final
 	}
+	
+	
+	// Modificamos JwtHelper para agregar los roles en el JWT
+	public String createTokenWithClaims(String username, String role) {
+	    final var now = new Date();
+	    final var expirationDate = new Date(now.getTime() + (3600 * 1000)); // 1 hora
 
+	    return Jwts.builder()
+	        .setSubject(username)
+	        .claim("roles", role) // Aquí insertamos el rol como claim
+	        .setIssuedAt(now)
+	        .setExpiration(expirationDate)
+	        .signWith(this.getSecretKey())
+	        .compact();
+	}
+	
+	
 	/**
 	 * Verifica si un token JWT es válido, es decir, si no ha expirado.
 	 *
@@ -47,8 +64,12 @@ public class JwtHelper {
 	 * @return true si el token aún no ha expirado, false si ya no es válido.
 	 */
 	public boolean validateToken(String token) {
-	    final var expirationDate = this.getExpirationDate(token);
-	    return expirationDate.after(new Date());
+	    try {
+	        final var expirationDate = this.getExpirationDate(token);
+	        return expirationDate.after(new Date());
+	    } catch (Exception e) {
+	        return false;
+	    }
 	}
 
 

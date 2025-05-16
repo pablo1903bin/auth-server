@@ -51,13 +51,14 @@ public class JwtHelper {
 	}
 
 	// Modificamos JwtHelper para agregar los roles en el JWT
-	public String createTokenWithClaims(String username, String role) {
+	public String createTokenWithClaims(String username, String role, Long userId) {
 		final var now = new Date();
 		final var expirationDate = new Date(now.getTime() + (3600 * 1000)); // 1 hora
 
 		return Jwts.builder()
 				.setSubject(username)
-				.claim("roles", role) // Aquí insertamos el rol como claim
+	            .claim("roles", role)     // 👤 rol
+	            .claim("id", userId)      // 🆔 ID del usuario como claim
 				.setIssuedAt(now)
 				.setExpiration(expirationDate)
 				.signWith(this.getSecretKey())

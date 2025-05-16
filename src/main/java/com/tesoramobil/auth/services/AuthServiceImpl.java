@@ -89,7 +89,7 @@ public class AuthServiceImpl implements AuthService {
 
         this.validPassword(user, userFromDB);
 
-        String token = jwtHelper.createTokenWithClaims(userFromDB.getUsername(), userFromDB.getRole().name());
+        String token = jwtHelper.createTokenWithClaims(userFromDB.getUsername(), userFromDB.getRole().name(), userFromDB.getId());
 
         return UserLoginResponseDto.builder()
                 .idUser(userFromDB.getId())

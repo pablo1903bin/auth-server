@@ -14,8 +14,8 @@ spring:
     name: auth-server
 
   config:
-    import: optional:configserver:http://192.168.100.23:7777
-    #import: ${SPRING_CONFIG_IMPORT}
+    #import: optional:configserver:http://192.168.100.23:7777
+    import: ${SPRING_CONFIG_IMPORT}
 
   datasource:
     username: ${db.username}
@@ -41,8 +41,8 @@ eureka:
     instance-id: "${spring.application.name}:${random.value}"
   client:
     service-url:
-      #defaultZone: ${eureka.registry-server}
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: ${eureka.registry-server}
+      #defaultZone: http://192.168.100.23:8761/eureka/
 
 springdoc:
   swagger-ui:
